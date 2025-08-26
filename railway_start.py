@@ -22,6 +22,14 @@ def main():
         logger.info(f"PORT: {os.environ.get('PORT', 'Not set')}")
         logger.info(f"Python path: {sys.path}")
         
+        # Check frontend directory
+        logger.info("Checking frontend directory...")
+        frontend_path = os.path.join(os.getcwd(), "frontend")
+        logger.info(f"Frontend path: {frontend_path}")
+        logger.info(f"Frontend exists: {os.path.exists(frontend_path)}")
+        if os.path.exists(frontend_path):
+            logger.info(f"Frontend contents: {os.listdir(frontend_path)}")
+        
         # Test imports
         logger.info("Testing imports...")
         from backend.app import app

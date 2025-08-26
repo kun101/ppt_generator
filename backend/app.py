@@ -37,9 +37,9 @@ def health():
     logger.info("Health check endpoint called")
     return {"ok": True, "service": "text-to-pptx", "status": "healthy"}
 
-@app.get("/")
-async def root():
-    """Root endpoint that redirects to frontend."""
+@app.get("/api/info")
+async def api_info():
+    """API info endpoint."""
     return {"message": "Text-to-PowerPoint Generator API", "status": "running", "health": "/api/health"}
 
 @app.get("/api/debug/routes")
@@ -98,14 +98,35 @@ async def generate_pptx(
         except: 
             pass
 
+# Setup paths for static files
+current_dir = Path(__file__).parent.parent  # Go up from backend/ to root
+frontend_dir = current_dir / "frontend"
+
+logger.info(f"Current directory: {current_dir}")
+logger.info(f"Frontend directory: {frontend_dir}")
+logger.info(f"Frontend directory exists: {frontend_dir.exists()}")
+
 # Serve static files for frontend
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
+app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
 
 # Serve the main HTML file at root
 @app.get("/")
 async def serve_frontend():
     """Serve the main frontend HTML file."""
-    return FileResponse("frontend/index.html")
+    html_path = frontend_dir / "index.html"
+    logger.info(f"Serving frontend from: {html_path}")
+    logger.info(f"HTML file exists: {html_path.exists()}")
+    if html_path.exists():
+        return FileResponse(str(html_path))
+    else:
+        # Fallback if file not found
+        return {
+            "error": "Frontend not found",
+            "message": "Please access the API at /api/info",
+            "health": "/api/health",
+            "frontend_path": str(html_path),
+            "working_dir": str(current_dir)
+        }
 
 if __name__ == "__main__":
     import uvicorn
