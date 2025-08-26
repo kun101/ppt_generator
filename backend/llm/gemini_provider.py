@@ -24,7 +24,7 @@ class GeminiProvider(LLMProvider):
             ],
             "generationConfig": {
                 "temperature": 0.7,
-                "maxOutputTokens": 4000
+                "maxOutputTokens": 8000  # Increased from 4000 to handle longer responses
             }
         }
         

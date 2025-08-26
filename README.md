@@ -9,6 +9,9 @@ Transform your text content into professional PowerPoint presentations using AI.
 - **Multiple AI Providers**: Supports OpenAI (GPT-4) and Google (Gemini)
 - **Template Preservation**: Maintains your PowerPoint template's design, fonts, and branding
 - **Smart Content Structure**: Automatically organizes text into logical slide sequences
+- **Intelligent Image Placement**: Uses template image placeholders when available, falls back to smart positioning
+- **Complete Placeholder Filling**: Eliminates all "click here to add text" boxes automatically
+- **Template-Aware Layouts**: Selects appropriate layouts based on template capabilities
 - **Image Reuse**: Intelligently reuses images from your template when appropriate
 - **Markdown Support**: Handles both plain text and Markdown formatting
 - **Privacy First**: API keys and content are never stored or logged
@@ -67,8 +70,6 @@ For easy cloud deployment, this application is Railway-ready:
 3. Railway will auto-detect and deploy your app
 4. Get your live URL instantly!
 
-See [RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md) for detailed deployment instructions.
-
 ## 📖 How to Use
 
 1. **Select AI Provider**: Choose from OpenAI or Google
@@ -118,7 +119,7 @@ curl -X POST http://localhost:8000/api/generate \
 ### Project Structure
 
 ```
-text-to-pptx/
+ppt_generator/
 ├── backend/
 │   ├── app.py                 # FastAPI application
 │   ├── llm/                   # AI provider abstraction
@@ -137,7 +138,15 @@ text-to-pptx/
 │   ├── styles.css
 │   └── app.js
 ├── tests/                     # Unit tests
-└── requirements.txt
+│   ├── test_planner.py
+│   └── test_writer.py
+├── railway_start.py           # Railway deployment entry
+├── start.sh                   # Deployment script
+├── requirements.txt           # Python dependencies
+├── Dockerfile                 # Container configuration
+├── railway.toml               # Railway configuration
+├── nixpacks.toml              # Build configuration
+└── README.md                  # This file
 ```
 
 ## 🔒 Privacy & Security

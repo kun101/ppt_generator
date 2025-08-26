@@ -1,19 +1,27 @@
 from markdown_it import MarkdownIt
 
-def rule_based_plan(text: str, guidance: str):
+def rule_based_plan(text: str, guidance: str, style_ctx=None):
     """Generate a slide plan using heuristic rules when LLM fails."""
     md = MarkdownIt()
     tokens = md.parse(text)
     
+    # Check if template has images for layout suggestions
+    has_images = style_ctx and len(style_ctx.get("images", [])) > 0
+    
     slides = []
     current_slide = {"title": "Overview", "layout_hint": "bullets", "bullets": []}
+    slide_count = 0
     
     for token in tokens:
         if token.type == "heading_open" and int(token.tag[1]) <= 2:
             # New section - save current slide and start new one
             if current_slide["bullets"] or current_slide["title"] != "Overview":
                 slides.append(current_slide)
-            current_slide = {"title": "", "layout_hint": "bullets", "bullets": []}
+            
+            # Suggest image layout for some slides if images are available
+            layout_hint = _suggest_layout_hint(slide_count, has_images)
+            current_slide = {"title": "", "layout_hint": layout_hint, "bullets": []}
+            slide_count += 1
         elif token.type == "inline" and token.content.strip():
             if current_slide["title"] == "" or current_slide["title"] == "Overview":
                 # Use as title
@@ -33,13 +41,26 @@ def rule_based_plan(text: str, guidance: str):
     
     # If no slides were created from markdown, create slides from raw text
     if not slides:
-        slides = _create_slides_from_text(text, guidance)
+        slides = _create_slides_from_text(text, guidance, has_images)
     
     # Apply guidance-based limits
     max_slides = 12 if "short" in guidance.lower() else 18
     return slides[:max_slides]
 
-def _create_slides_from_text(text: str, guidance: str):
+def _suggest_layout_hint(slide_index, has_images):
+    """Suggest appropriate layout hint based on slide position and available images."""
+    if not has_images:
+        return "bullets"
+    
+    # Use image layouts strategically (roughly every 3rd slide)
+    if slide_index % 3 == 1:
+        return "image-right"
+    elif slide_index % 3 == 2:
+        return "image-left"
+    else:
+        return "bullets"
+
+def _create_slides_from_text(text: str, guidance: str, has_images=False):
     """Create slides from plain text by splitting into chunks."""
     slides = []
     
@@ -58,9 +79,13 @@ def _create_slides_from_text(text: str, guidance: str):
             # Start new slide
             slides.append(current_slide)
             slide_count += 1
+            
+            # Suggest layout based on slide position if images are available
+            layout_hint = _suggest_layout_hint(len(slides), has_images)
+            
             current_slide = {
                 "title": f"Key Points {slide_count}",
-                "layout_hint": "bullets",
+                "layout_hint": layout_hint,
                 "bullets": []
             }
         
@@ -81,9 +106,10 @@ def _create_slides_from_text(text: str, guidance: str):
     
     # Ensure we have at least one slide
     if not slides:
+        layout_hint = _suggest_layout_hint(0, has_images)
         slides = [{
             "title": "Content Overview",
-            "layout_hint": "bullets",
+            "layout_hint": layout_hint,
             "bullets": [text[:180]] if text else ["No content provided"]
         }]
     
