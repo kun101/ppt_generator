@@ -10,9 +10,19 @@ from backend.llm import get_provider
 from tempfile import NamedTemporaryFile
 import io
 import os
+import logging
 from pathlib import Path
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title="Text→PPTX", description="Convert text to PowerPoint presentations")
+
+# Log startup
+logger.info("Starting Text-to-PowerPoint Generator")
+logger.info(f"Python path: {os.getcwd()}")
+logger.info(f"PORT environment variable: {os.environ.get('PORT', 'Not set')}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,7 +34,13 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "service": "text-to-pptx"}
+    logger.info("Health check endpoint called")
+    return {"ok": True, "service": "text-to-pptx", "status": "healthy"}
+
+@app.get("/")
+async def root():
+    """Root endpoint that redirects to frontend."""
+    return {"message": "Text-to-PowerPoint Generator API", "status": "running", "health": "/api/health"}
 
 @app.get("/api/debug/routes")
 def debug_routes():
@@ -93,4 +109,6 @@ async def serve_frontend():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    print(f"Starting server on port {port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)

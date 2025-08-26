@@ -1,8 +1,34 @@
-# 🚀 Railway Deployment Guide
+# 🚀 Railway Deploy**Manual start:**
+```bash
+python -m uvicorn backend.app:app --reload --host 127.0.0.1 --port 8000
+```
+
+## 📋 Prerequisiteside
 
 This guide will help you deploy the Text-to-PowerPoint Generator to Railway.
 
-## 📋 Prerequisites
+## �️ Local Development
+
+Before deploying, you can test locally:
+
+**Windows:**
+```bash
+run_local.bat
+```
+
+**Unix/Linux/Mac:**
+```bash
+chmod +x run_local.sh
+./run_local.sh
+```
+
+**Manual start:**
+```bash
+cd backend
+python -m uvicorn app:app --reload --host 127.0.0.1 --port 8000
+```
+
+## �📋 Prerequisites
 
 1. **Railway Account**: Sign up at [railway.app](https://railway.app)
 2. **GitHub Repository**: Your code should be in a GitHub repository
@@ -84,11 +110,20 @@ your-domain.railway.app/
 - Check the Railway build logs in your dashboard
 - Ensure `requirements.txt` includes all dependencies
 - Verify Python version compatibility (using Python 3.11)
+- Run `python test_railway.py` locally to test imports
 
 ### Runtime Issues
-- Check the Railway deployment logs
+- Check the Railway deployment logs for detailed error messages
 - Verify the health check endpoint responds: `/api/health`
-- Ensure the start command is correct in `railway.toml`
+- Ensure the PORT environment variable is being used correctly
+- Look for import errors or missing dependencies in the logs
+
+### Healthcheck Failures
+If the healthcheck fails:
+1. Check Railway logs for startup errors
+2. Verify the app is binding to `0.0.0.0:$PORT`
+3. Test locally with: `PORT=8000 python railway_start.py`
+4. Ensure `/api/health` endpoint is accessible
 
 ### File Upload Issues
 - Railway has file size limits for uploads
