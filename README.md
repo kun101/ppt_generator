@@ -6,16 +6,18 @@ Transform your text content into professional PowerPoint presentations using AI.
 
 ## 🌟 Features
 
+- **Smart Template Analysis (Default)**: The generator now performs deep structural analysis of your template (masters, layouts, placeholders, image slots) and drives slide planning directly from that structure.
 - **Multiple AI Providers**: Supports OpenAI (GPT-4) and Google (Gemini)
-- **Template Preservation**: Maintains your PowerPoint template's design, fonts, and branding
-- **Smart Content Structure**: Automatically organizes text into logical slide sequences
-- **Intelligent Image Placement**: Uses template image placeholders when available, falls back to smart positioning
-- **Complete Placeholder Filling**: Eliminates all "click here to add text" boxes automatically
-- **Template-Aware Layouts**: Selects appropriate layouts based on template capabilities
-- **Image Reuse**: Intelligently reuses images from your template when appropriate
-- **Markdown Support**: Handles both plain text and Markdown formatting
-- **Privacy First**: API keys and content are never stored or logged
-- **Fallback System**: Works even if AI services are unavailable
+- **Deterministic Placeholder Mapping**: Each AI instruction is mapped to an existing placeholder exactly—no arbitrary new shapes created.
+- **Strict Image Placeholder Usage**: Images are inserted ONLY into existing image/object/media placeholders; size and position are preserved 1:1 with the template.
+- **Overflow-Safe Text Fitting**: Ultra‑conservative sizing + truncation logic prevents text spill beyond placeholder bounds.
+- **Duplicate Content Prevention**: Title, bullets, subtitles, and secondary text are tracked so nothing appears twice on a slide.
+- **Complete Placeholder Filling**: Eliminates all "click here to add text" artifacts where content exists.
+- **Template-Aware Layout Selection**: Chooses layouts the template actually contains; honors their semantic roles.
+- **Intelligent Image Reuse**: Reuses embedded template images (no external generation) following contextual hints.
+- **Markdown Support**: Bold/italic parsing for inline formatting.
+- **Privacy First**: API keys & content processed in-memory only; nothing persisted.
+- **Graceful Fallback**: If LLM guidance fails, a heuristic legacy planner activates automatically.
 
 ## 🚀 Quick Start
 
@@ -50,7 +52,7 @@ Transform your text content into professional PowerPoint presentations using AI.
    pip install -r requirements.txt
    ```
 
-4. **Run the application**
+4. **Run the application (smart template mode is automatic)**
    ```bash
    python -m uvicorn backend.app:app --reload --host 0.0.0.0 --port 8000
    ```
@@ -72,12 +74,13 @@ For easy cloud deployment, this application is Railway-ready:
 
 ## 📖 How to Use
 
-1. **Select AI Provider**: Choose from OpenAI or Google
-2. **Enter API Key**: Provide your API key (never stored)
-3. **Add Guidance** (optional): Specify presentation style (e.g., "investor pitch", "training materials")
-4. **Paste Content**: Add your text or Markdown content
-5. **Upload Template**: Select your PowerPoint template (.pptx or .potx)
-6. **Generate**: Click to create your presentation
+1. **Select AI Provider**: OpenAI or Google Gemini
+2. **Enter API Key**: Not stored; used only for this request
+3. **(Optional) Guidance**: Style hints ("investor pitch", "technical training")
+4. **Paste Content**: Plain text or Markdown
+5. **Upload Template**: .pptx / .potx with your brand layout
+6. **Generate**: Smart template-guided mode runs by default
+7. **(Optional) Legacy Mode**: Pass `use_template_guidance=false` (form field) to force the older heuristic pipeline
 
 ## 🔧 API Usage
 
@@ -85,12 +88,22 @@ The service provides a REST API for programmatic access:
 
 ```bash
 curl -X POST http://localhost:8000/api/generate \
-  -F "provider=openai" \
-  -F "api_key=sk-your-api-key" \
-  -F "guidance=investor pitch deck" \
-  -F "text=@your-content.txt" \
-  -F "template=@your-template.pptx" \
-  -o generated.pptx
+   -F "provider=openai" \
+   -F "api_key=sk-your-api-key" \
+   -F "guidance=investor pitch deck" \
+   -F "text=@your-content.txt" \
+   -F "template=@your-template.pptx" \
+   -F "use_template_guidance=true" \
+   -o generated.pptx
+
+# Legacy (non-structural) mode:
+curl -X POST http://localhost:8000/api/generate \
+   -F "provider=gemini" \
+   -F "api_key=sk-your-api-key" \
+   -F "text=@your-content.txt" \
+   -F "template=@your-template.pptx" \
+   -F "use_template_guidance=false" \
+   -o legacy_generated.pptx
 ```
 
 ### API Endpoints
@@ -110,11 +123,11 @@ curl -X POST http://localhost:8000/api/generate \
 
 ### How It Works
 
-**Content Processing**: The system uses Large Language Models to analyze your text and create a structured slide plan. Each slide gets a title, layout suggestion, bullet points, and optional speaker notes. If the AI service fails, a heuristic fallback parser uses Markdown headers and text structure to create slides.
+**Content Processing**: Default pipeline performs deep template analysis (layout indices, placeholder taxonomy, image slots) and feeds that context into an LLM prompt. The LLM returns a structured JSON plan mapping semantic content → concrete placeholder indices. If the AI service fails or returns invalid JSON, a heuristic Markdown-based fallback activates.
 
-**Style Preservation**: The generator starts from your uploaded template to inherit slide masters, layouts, fonts, and color schemes. It analyzes the template to extract reusable design elements and applies your brand consistently across all generated slides.
+**Style Preservation**: Your uploaded template is cloned; original masters, color themes, fonts, and placeholder geometries remain untouched. Text is only inserted into existing placeholders—no freestyle shape creation—guaranteeing design fidelity.
 
-**Image Intelligence**: Rather than generating new images, the system intelligently reuses pictures already present in your template. It exports image blobs from template slides and re-inserts them contextually (e.g., section headers, content illustrations) to maintain visual consistency.
+**Image Intelligence**: Only existing template images are reused; images are inserted strictly into image/media/object placeholders (types 7, 18, 19, 20). Exact position & dimensions are preserved—no overlap, no drift. If a slide has no available image placeholder or the content doesn't call for one, no image is forced.
 
 ### Project Structure
 
@@ -171,11 +184,11 @@ pytest tests/
 
 ## 📋 Limitations
 
-- **Template Dependency**: Requires a PowerPoint template for styling
-- **AI Service Dependency**: Best results require working AI provider (though fallback exists)
-- **Style Inference**: Complex template layouts may not be perfectly preserved
-- **No Image Generation**: Only reuses existing template images
-- **Token Limits**: Very long content may be truncated
+- **Template Required**: A well-structured template yields best results
+- **LLM Variability**: Although structured, extremely ambiguous input can reduce precision (fallback covers failures)
+- **No New Image Generation**: Only existing template images are reused (by design)
+- **Very Long Text**: Ultra-long bodies may be truncated to prevent overflow
+- **Exotic Templates**: Rare custom placeholder types may be ignored if unmapped
 
 ## 🤝 Contributing
 

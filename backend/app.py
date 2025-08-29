@@ -7,6 +7,10 @@ from backend.pptx_engine.template_reader import analyze_template
 from backend.pptx_engine.template_analyzer import analyze_template_structure, generate_llm_template_prompt
 from backend.pptx_engine.slide_planner import make_slide_plan
 from backend.pptx_engine.slide_writer import build_presentation
+from backend.pptx_engine.default_template import (
+    get_default_template_bytes,
+    get_default_template_metadata,
+)
 from backend.pptx_engine.llm_guided_writer import build_presentation_with_llm_guidance
 from backend.llm import get_provider
 from tempfile import NamedTemporaryFile
@@ -43,7 +47,13 @@ def health():
 @app.get("/api/info")
 async def api_info():
     """API info endpoint."""
-    return {"message": "Text-to-PowerPoint Generator API", "status": "running", "health": "/api/health"}
+    return {
+        "message": "Text-to-PowerPoint Generator API",
+        "status": "running",
+        "health": "/api/health",
+        "default_template": "/api/template/default",
+        "default_template_meta": "/api/template/default/meta"
+    }
 
 @app.get("/api/debug/routes")
 def debug_routes():
@@ -57,6 +67,23 @@ def debug_routes():
         })
     return {"routes": routes}
 
+
+@app.get("/api/template/default/meta")
+def default_template_meta():
+    """Metadata / preview JSON for built-in default template."""
+    return get_default_template_metadata()
+
+
+@app.get("/api/template/default")
+def default_template_download():
+    """Download the built-in default template (.pptx)."""
+    data = get_default_template_bytes()
+    return StreamingResponse(
+        io.BytesIO(data),
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        headers={"Content-Disposition": 'attachment; filename="default_template.pptx"'}
+    )
+
 @app.post("/api/generate")
 async def generate_pptx(
     text: str = Form(...),
@@ -64,7 +91,7 @@ async def generate_pptx(
     provider: str = Form(...),        # "openai" | "gemini"
     api_key: str = Form(...),
     template: UploadFile = File(...),
-    use_template_guidance: bool = Form(False)  # New option for template-guided approach
+    use_template_guidance: bool = Form(True)  # Default now True - smart template analysis
 ):
     print(f"DEBUG: Received request with provider={provider}")  # Debug log
     scrub_logs()  # ensure no sensitive logs
@@ -79,12 +106,11 @@ async def generate_pptx(
         template_path = tf.name
 
     try:
+        # Always prefer template-guided unless explicitly disabled
         if use_template_guidance:
-            # NEW APPROACH: Template-guided LLM generation
             return await _generate_with_template_guidance(text, guidance, template_path, provider, api_key)
-        else:
-            # ORIGINAL APPROACH: Standard generation
-            return await _generate_standard(text, guidance, template_path, provider, api_key)
+        # Fallback explicit request for legacy mode
+        return await _generate_standard(text, guidance, template_path, provider, api_key)
             
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

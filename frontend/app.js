@@ -17,6 +17,7 @@ class PresentationGenerator {
         this.addCharacterCounter();
         this.addFileUploadEnhancements();
         this.addAnimations();
+    this.addDefaultTemplateSupport();
     }
 
     addCharacterCounter() {
@@ -75,6 +76,51 @@ class PresentationGenerator {
         fileInput.addEventListener('change', (e) => {
             if (e.target.files[0]) {
                 this.updateUploadDisplay(e.target.files[0]);
+            }
+        });
+    }
+
+    addDefaultTemplateSupport() {
+        const btn = document.getElementById('useDefaultTemplate');
+        const fileInput = document.getElementById('template');
+        const previewBox = document.getElementById('defaultTemplatePreview');
+        const nameEl = document.getElementById('dtName');
+        const descEl = document.getElementById('dtDesc');
+        const layoutsEl = document.getElementById('dtLayouts');
+        if (!btn) return;
+
+        // Fetch metadata on load
+        fetch('/api/template/default/meta')
+            .then(r => r.json())
+            .then(meta => {
+                previewBox.classList.remove('hidden');
+                nameEl.textContent = meta.name;
+                descEl.textContent = meta.description;
+                layoutsEl.textContent = 'Layouts: ' + meta.layouts.map(l => l.type).join(', ');
+            })
+            .catch(() => {/* silent */});
+
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            btn.textContent = 'Loading...';
+            try {
+                const resp = await fetch('/api/template/default');
+                if (!resp.ok) throw new Error('Failed to fetch default template');
+                const blob = await resp.blob();
+
+                // Create a File object to assign to input
+                const file = new File([blob], 'default_template.pptx', { type: blob.type });
+                // DataTransfer to set file input programmatically
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                fileInput.files = dt.files;
+                this.updateUploadDisplay(file);
+                this.showStatus('Default template loaded.', 'success');
+            } catch (e) {
+                this.showStatus('Could not load default template: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Use Built-in Default Template';
             }
         });
     }
@@ -210,6 +256,12 @@ class PresentationGenerator {
 
         try {
             const formData = new FormData(this.form);
+            // Ensure smart template guidance always enabled
+            if (!formData.has('use_template_guidance')) {
+                formData.append('use_template_guidance', 'true');
+            } else {
+                formData.set('use_template_guidance', 'true');
+            }
             
             // Add progress updates
             setTimeout(() => {

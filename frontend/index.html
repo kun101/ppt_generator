@@ -205,23 +205,21 @@ The AI will structure this into professional slides."
                                     <div class="text-lg font-medium text-white">Drop your template here</div>
                                     <div class="text-gray-400">or click to browse</div>
                                     <div class="text-xs text-gray-500">Supports .pptx and .potx files</div>
+                                    <div class="mt-4">
+                                        <button type="button" id="useDefaultTemplate" class="px-3 py-2 text-xs font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition">Use Built-in Default Template</button>
+                                    </div>
+                                    <div id="defaultTemplatePreview" class="hidden mt-4 text-left text-xs bg-gray-900/60 p-3 rounded-lg border border-gray-700 space-y-1">
+                                        <div class="font-semibold text-gray-200">Default Template Preview</div>
+                                        <div class="text-gray-400" id="dtName"></div>
+                                        <div class="text-gray-400" id="dtDesc"></div>
+                                        <div class="text-gray-500" id="dtLayouts"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Template Guidance Option -->
-                    <div class="mt-6 pt-6 border-t border-gray-700/50">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" name="use_template_guidance" id="use_template_guidance" 
-                                   class="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-blue-500 focus:ring-2">
-                            <div class="flex-1">
-                                <div class="text-sm font-medium text-gray-200">Smart Template Analysis</div>
-                                <div class="text-xs text-gray-400">Let AI analyze template structure for better content placement</div>
-                            </div>
-                            <span class="px-2 py-1 bg-purple-600 text-white text-xs rounded-full">NEW</span>
-                        </label>
-                    </div>
+                    <!-- Smart Template Analysis always enabled (option removed) -->
                 </div>
             </div>
 
